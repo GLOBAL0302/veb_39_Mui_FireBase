@@ -1,8 +1,14 @@
 import {useState} from 'react';
 import {GameMutation} from '../../types.ts';
-import {Button, Grid, TextField, Typography} from '@mui/material';
+import {Grid, TextField, Typography} from '@mui/material';
+import axiosApi from '../../axiosApi.ts';
+import {useNavigate} from 'react-router-dom';
+import {enqueueSnackbar} from 'notistack';
+import {LoadingButton} from '@mui/lab';
+
 
 const NewGame = () => {
+  const navigate = useNavigate();
   const [gameMutations, setGameMutation] = useState<GameMutation>(
     {
       platform: '',
@@ -11,6 +17,8 @@ const NewGame = () => {
       price: ''
     }
   );
+
+  const [isLoading, setIsloading] = useState(false)
 
   const onFieldChange = (event:React.ChangeEvent<HTMLInputElement>)=>{
     const {name, value} = event.target
@@ -21,8 +29,27 @@ const NewGame = () => {
     }))
   }
 
-  const onSubmit = (event:React.FormEvent)=>{
+  const onSubmit = async (event:React.FormEvent)=>{
     event.preventDefault()
+
+    try{
+      setIsloading(true)
+      const gameData = {
+        ...gameMutations,
+        price:parseFloat(gameMutations.price)
+      }
+      axiosApi.post("/games.json",gameData )
+
+      navigate("/")
+
+    }catch (e){
+      enqueueSnackbar("error")
+      // enqueueSnackbar({variant:'error', message:"something went Wrong"})
+    }
+    finally {
+      setIsloading(false)
+
+    }
 
   }
   return (
@@ -34,6 +61,7 @@ const NewGame = () => {
       </Grid>
       <Grid item>
       <TextField
+        name="platform"
         required
         fullWidth
         label="Platform"
@@ -43,6 +71,7 @@ const NewGame = () => {
       </Grid>
       <Grid item>
       <TextField
+        name="title"
         required
         fullWidth
         label="Title"
@@ -52,6 +81,7 @@ const NewGame = () => {
       </Grid>
       <Grid item>
       <TextField
+        name="description"
         required
         fullWidth
         label="Description"
@@ -62,6 +92,7 @@ const NewGame = () => {
         </Grid>
       <Grid item>
       <TextField
+        name="price"
         required
         fullWidth
         label="Price"
@@ -72,9 +103,14 @@ const NewGame = () => {
       </Grid>
 
       <Grid item>
-      <Button variant="contained" type="submit">
-        Save
-      </Button>
+        <LoadingButton
+          loading={isLoading}
+          loadingPosition="start"
+          variant="contained"
+          type="submit"
+        >
+          Save
+        </LoadingButton>
       </Grid>
     </Grid>
   );
