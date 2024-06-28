@@ -1,26 +1,51 @@
-import {useState} from 'react';
-import {GameMutation} from '../../types.ts';
-import {Grid, TextField, Typography} from '@mui/material';
+import {useCallback, useEffect, useState} from 'react';
+import {ApiGames, GameMutation} from '../../types.ts';
+import {CircularProgress, Grid, TextField, Typography} from '@mui/material';
 import axiosApi from '../../axiosApi.ts';
 import {useNavigate, useParams} from 'react-router-dom';
 import {enqueueSnackbar} from 'notistack';
 import {LoadingButton} from '@mui/lab';
 
+const initialState = {
+  platform: '',
+  title: '',
+  description: '',
+  price: ''
+}
+
 
 const MutateGame = () => {
   const navigate = useNavigate();
   const {id} = useParams();
+  const [isMutating, setIsMutating] = useState(false);
+  const [isFetching, setIsFetching] = useState(false)
+
+  const fetchOneGame = useCallback(async (id:string)=>{
+    const response = await axiosApi.get<ApiGames | null>(`/games/${id}.json`)
+    setIsFetching(true)
+    if(response.data){
+      setGameMutation({
+        ...response.data,
+        price: response.data.price.toString()
+      })
+    }
+    setIsFetching(false)
+  },[])
+
+  useEffect(() => {
+    if(id!==undefined){
+      void fetchOneGame(id)
+    }
+    else{
+      setGameMutation(initialState)
+    }
+  }, [id, fetchOneGame]);
 
   const [gameMutations, setGameMutation] = useState<GameMutation>(
-    {
-      platform: '',
-      title: '',
-      description: '',
-      price: ''
-    }
+    initialState
   );
 
-  const [isLoading, setIsloading] = useState(false)
+
 
   const onFieldChange = (event:React.ChangeEvent<HTMLInputElement>)=>{
     const {name, value} = event.target
@@ -35,26 +60,30 @@ const MutateGame = () => {
     event.preventDefault()
 
     try{
-      setIsloading(true)
+      setIsMutating(true)
       const gameData = {
         ...gameMutations,
         price:parseFloat(gameMutations.price)
       }
-      axiosApi.post("/games.json",gameData )
+
+      if(id!== undefined){
+        await  axiosApi.put(`/games/${id}.json`, gameData)
+
+      }else{
+        axiosApi.post("/games.json",gameData )
+      }
 
       navigate("/")
 
     }catch (e){
-      enqueueSnackbar("error")
-      // enqueueSnackbar({variant:'error', message:"something went Wrong"})
+
+      enqueueSnackbar({variant:'error', message:"something went Wrong"})
     }
     finally {
-      setIsloading(false)
-
+      setIsMutating(false)
     }
-
   }
-  return (
+  return isFetching? (<CircularProgress/>) : (
     <Grid container component="form" direction="column" gap={2} onSubmit={onSubmit}>
       <Grid >
         <Typography variant="h5">
@@ -106,7 +135,7 @@ const MutateGame = () => {
 
       <Grid item>
         <LoadingButton
-          loading={isLoading}
+          loading={isMutating}
           loadingPosition="start"
           variant="contained"
           type="submit"
