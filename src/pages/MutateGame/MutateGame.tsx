@@ -2,13 +2,15 @@ import {useState} from 'react';
 import {GameMutation} from '../../types.ts';
 import {Grid, TextField, Typography} from '@mui/material';
 import axiosApi from '../../axiosApi.ts';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import {enqueueSnackbar} from 'notistack';
 import {LoadingButton} from '@mui/lab';
 
 
-const NewGame = () => {
+const MutateGame = () => {
   const navigate = useNavigate();
+  const {id} = useParams();
+
   const [gameMutations, setGameMutation] = useState<GameMutation>(
     {
       platform: '',
@@ -56,7 +58,7 @@ const NewGame = () => {
     <Grid container component="form" direction="column" gap={2} onSubmit={onSubmit}>
       <Grid >
         <Typography variant="h5">
-          Create New Game
+          {id? "Edit a game": "Create a game"}
         </Typography>
       </Grid>
       <Grid item>
@@ -116,4 +118,4 @@ const NewGame = () => {
   );
 };
 
-export default NewGame;
+export default MutateGame;
